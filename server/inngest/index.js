@@ -246,7 +246,7 @@ const sendNewShowNotifications = inngest.createFunction(
         <h2>Hi ${userName},</h2>
         <p>We've just added a new show to our library:</p>
         <h3 style="color: #F84565;">"${movieTitle}"</h3>
-        <p>Visit our website - <a href="#">FeelCinemagic</a> 🔗</p>
+        <p>Visit our website - <a href="https://feelcinemagic.vercel.app/">FeelCinemagic</a> 🔗</p>
         <br />
         <p>Thanks, <br />FeelCinemagic Team</p>
       </div>`;
