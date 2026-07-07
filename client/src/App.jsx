@@ -14,9 +14,17 @@ import Addshows from './pages/admin/Addshows'
 import ListShows from './pages/admin/ListShows.jsx'
 import ListBookings from './pages/admin/ListBookings'
 import Layout from './pages/admin/Layout'
+import { useAppContext } from './context/AppContext.jsx'
+import { SignIn } from '@clerk/clerk-react'
+import Loading from './components/Loading.jsx'
+import { useParams } from 'react-router-dom'
 const App = () => {
 
    const isAdminRoute = useLocation().pathname.startsWith('/admin')
+   
+   const {nextUrl} = useParams()
+
+   const { user } = useAppContext()
 
   return (
     <>
@@ -28,8 +36,9 @@ const App = () => {
           <Route path='/movies/:id' element={<MovieDetails/>} />
           <Route path='/movies/:id/:date' element={<SeatLayout/>} />
           <Route path='/my-bookings' element={<MyBooking/>} />
+          <Route path='/loading/:nexturl' element={<Loading/>} />
           <Route path='/favorites' element={<Favorite/>} />
-          <Route path='/admin/*' element= {<Layout/>}>
+          <Route path='/admin/*' element= { <Layout/> }>
              <Route index element={<Dashboard/>} />
              <Route path='add-shows' element={<Addshows/>} />
              <Route path='list-shows' element={<ListShows/>} />
