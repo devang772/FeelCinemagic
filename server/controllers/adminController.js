@@ -1,15 +1,28 @@
 import Booking from '../models/Booking.js';
 import Show from '../models/Show.js';
 import User from '../models/User.js';
+import { clerkClient } from '@clerk/express';
 
 export const isAdmin = async (req, res, next) => {
-  res.json({ success: true, isAdmin: true });
+  try {
+    const { userId } = req.auth();
+    if (!userId) return res.json({ success: true, isAdmin: false });
+
+    const user = await clerkClient.users.getUser(userId);
+    const userEmail = user.emailAddresses?.[0]?.emailAddress;
+
+    const isAdmin = userEmail === process.env.ADMIN_EMAIL;
+    res.json({ success: true, isAdmin });
+  } catch (error) {
+    console.error('isAdmin check failed:', error);
+    res.json({ success: true, isAdmin: false });
+  }
 }
 
 export const getDashboardData = async (req, res) => {
   try {
     const bookings = await Booking.find({ isPaid: true });
-    const activeShows = await Show.find({ date: { $gte: new Date() } }).populate('movie');
+    const activeShows = await Show.find({ showDateTime: { $gte: new Date() } }).populate('movie');
 
     const totalUser = await User.countDocuments();
 
