@@ -89,31 +89,39 @@ const sendBookingConfirmationEmail = inngest.createFunction(
   { event: "app/show.booked" },
   async ({ event, step }) => {
     const { bookingId } = event.data;
-    const booking = await Booking.findById(bookingId)
-      .populate({
-        path: "show",
-        populate: { path: "movie", model: "Movie" },
-      })
-      .populate("user");
+
+    // Populate show→movie but NOT user (user._id is a Clerk string,
+    // Mongoose cannot auto-populate String refs — fetch user manually instead)
+    const booking = await Booking.findById(bookingId).populate({
+      path: "show",
+      populate: { path: "movie", model: "Movie" },
+    });
+
+    if (!booking) throw new Error(`Booking ${bookingId} not found`);
+
+    // Manually fetch user since _id is a Clerk string (not ObjectId)
+    const user = await UserModel.findById(booking.user);
+
+    if (!user) throw new Error(`User ${booking.user} not found`);
 
     await sendEmail({
-      to: booking.user.email,
+      to: user.email,
       subject: `Payment Confirmation: "${booking.show.movie.title}" booked!`,
       body: `<div style="font-family: Arial, sans-serif; line-height: 1.5;">
-        <h2>Hi ${booking.user.name},</h2>
+        <h2>Hi ${user.name},</h2>
         <p>Your booking for <strong style="color: #F84565;">"${
           booking.show.movie.title
         }"</strong> is confirmed.</p>
         <p>
           <strong>Date:</strong> ${new Date(
             booking.show.showDateTime
-          ).toLocaleDateString("en-US", { timeZone: "Africa/Kigali" })}<br />
+          ).toLocaleDateString("en-US", { timeZone: "Asia/Kolkata" })}<br />
           <strong>Time:</strong> ${new Date(
             booking.show.showDateTime
-          ).toLocaleTimeString("en-US", { timeZone: "Africa/Kigali" })}
+          ).toLocaleTimeString("en-US", { timeZone: "Asia/Kolkata" })}
         </p>
         <p>Enjoy the show! 🍿</p>
-        <p>Thanks for booking with us!<br />- QuickShow Team</P>
+        <p>Thanks for booking with us!<br />- FeelCinemagic Team</p>
       </div>`,
     });
   }
