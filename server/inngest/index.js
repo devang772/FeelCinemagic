@@ -167,7 +167,7 @@ const sendShowReminders = inngest.createFunction(
         const userIds = [...new Set(Object.values(show.occupiedSeats))];
         if (userIds.length === 0) continue;
 
-        const users = await User.find({ _id: { $in: userIds } }).select(
+        const users = await UserModel.find({ _id: { $in: userIds } }).select(
           "name email"
         );
 
@@ -196,21 +196,21 @@ const sendShowReminders = inngest.createFunction(
             to: task.userEmail,
             subject: `Reminder: Your movie "${task.movieTitle}" starts soon!`,
             body: `<div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h2>Hello ${task.user.name},</h2>
-        <p>This is a quick reminder that your movie:<p>
-        <h3 style="color: #F84565;">"${task.movieTitle}"</h3>
+        <h2>Hello ${task.userName},</h2>
+        <p>This is a quick reminder that your movie:</p>
+        <h3 style="color: #F84565;">${task.movieTitle}</h3>
         <p>
           is scheduled for <strong>${new Date(task.showTime).toLocaleDateString(
             "en-US",
-            { timeZone: "Africa/Kigali" }
+            { timeZone: "Asia/Kolkata" }
           )}</strong> at
           <strong>${new Date(task.showTime).toLocaleTimeString("en-US", {
-            timeZone: "Africa/Kigali",
+            timeZone: "Asia/Kolkata",
           })}</strong>.
         </p>
         <p>It starts in approximately <strong>8 hours</strong> - make sure you're ready!</p>
         <br />
-        <p>Enjoy the show! 🍿 - FeelCinemagic Team</P>
+        <p>Enjoy the show! 🍿 - FeelCinemagic Team</p>
       </div>`,
           })
         )
@@ -235,7 +235,7 @@ const sendNewShowNotifications = inngest.createFunction(
   async ({ event }) => {
     const { movieTitle } = event.data;
 
-    const users = await User.find({});
+    const users = await UserModel.find({});
 
     for (const user of users) {
       const userEmail = user.email;
