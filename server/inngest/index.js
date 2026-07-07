@@ -1,7 +1,7 @@
 import { Inngest } from "inngest";
 import UserModel from "../models/User.js";
 import Booking from "../models/Booking.js";
-import show from "../models/Show.js";
+import Show from "../models/Show.js";
 import { sendEmail } from "../configs/nodeMailer.js";
 
 // Create a client to send and receive events
@@ -42,13 +42,17 @@ const syncUserUpdation = inngest.createFunction(
   async ({ event }) => {
     const { id, first_name, last_name, email_addresses, image_url } = event.data;
 
-    const updatedData = {
-      name: `${first_name} ${last_name}`,
-      email: email_addresses[0].email_address,
-      image: image_url,
-    };
+    const updatedData = {};
 
-    await UserModel.findByIdAndUpdate(id, updatedData);
+    // Guard against null values Clerk may send
+    const fullName = [first_name, last_name].filter(Boolean).join(" ");
+    if (fullName) updatedData.name = fullName;
+    if (email_addresses?.[0]?.email_address) updatedData.email = email_addresses[0].email_address;
+    if (image_url) updatedData.image = image_url;
+
+    if (Object.keys(updatedData).length > 0) {
+      await UserModel.findByIdAndUpdate(id, updatedData);
+    }
   }
 );
 
