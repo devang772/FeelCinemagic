@@ -1,4 +1,5 @@
 import { Inngest } from "inngest";
+import { clerkClient } from "@clerk/express";
 import UserModel from "../models/User.js";
 import Booking from "../models/Booking.js";
 import Show from "../models/Show.js";
@@ -100,9 +101,25 @@ const sendBookingConfirmationEmail = inngest.createFunction(
     if (!booking) throw new Error(`Booking ${bookingId} not found`);
 
     // Manually fetch user since _id is a Clerk string (not ObjectId)
-    const user = await UserModel.findById(booking.user);
+    let user = await UserModel.findById(booking.user);
 
-    if (!user) throw new Error(`User ${booking.user} not found`);
+    // Fallback: user exists in Clerk but was never synced to MongoDB
+    // (e.g. signed up before the webhook was configured)
+    if (!user) {
+      const clerkUser = await clerkClient.users.getUser(booking.user);
+      if (!clerkUser) throw new Error(`User ${booking.user} not found in Clerk`);
+
+      const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") || "Guest";
+      const email = clerkUser.emailAddresses?.[0]?.emailAddress;
+      if (!email) throw new Error(`No email found for user ${booking.user}`);
+
+      // Auto-sync this user into MongoDB so future lookups work
+      user = await UserModel.findByIdAndUpdate(
+        booking.user,
+        { _id: booking.user, name, email, image: clerkUser.imageUrl || "" },
+        { upsert: true, new: true }
+      );
+    }
 
     await sendEmail({
       to: user.email,
